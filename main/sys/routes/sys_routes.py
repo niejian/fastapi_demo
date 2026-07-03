@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 from main.base.base_dao import get_db
 from main.base.base_resp import BaseResp
 from main.sys.dao.sys_dao import SysDao
+from main.sys.models.sys_req import CreateUserReq
 from main.sys.models.sys_resp import SysUserResp
+from main.sys.service.sys_service import SysService
 
 router = APIRouter(
     prefix="/sys",
@@ -22,14 +24,34 @@ router = APIRouter(
     # 添加了以下参数，则该路由组下的所有路由都会添加该参数
 )
 
-sysDao = SysDao()
+sys_service = SysService()
 
 
 @router.get("/user/{user_id}", response_model=BaseResp)
 def get_user(user_id: int, db: Session = Depends(get_db)):
-    result = sysDao.get_user(db, user_id)
+    result = sys_service.get_user(db, user_id)
     if result:
         return BaseResp.success(data=result)
     return BaseResp.fail(-1, "获取用户信息失败")
+
+@router.get("/user/create/{user_name}/{user_password}", response_model=BaseResp)
+def create_user(user_name: str, user_password: str, db: Session = Depends(get_db)):
+    if user_name == '' or user_name is None:
+        return BaseResp.fail(-1, "用户名不能为空")
+    if user_password == '' or user_password is None:
+        return BaseResp.fail(-1, "密码不能为空")
+    # CreateUserReq = {
+    #     "username": user_name,
+    #     "password": user_password
+    # }
+    create_user_req = CreateUserReq(
+        username=user_name,
+        password=user_password
+    )
+    user_id = sys_service.create_user(db, create_user_req)
+    if user_id and user_id > 0:
+        return BaseResp.success(data={"id": user_id})
+    return BaseResp.fail(-1, "创建用户失败")
+
 
 

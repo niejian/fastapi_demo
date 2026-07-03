@@ -3,8 +3,11 @@
 # @author: nj
 # @file: base_dao
 # @project: fastapi_demo
+import functools
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from main.base.logger import logger
 
 # class BaseDataSource:
 #     data_base_url: str
@@ -35,3 +38,40 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def transactional(func):
+    """
+    事务装饰器，要求被装饰函数的第一个参数为 Session 对象，
+    或者在 kwargs 中包含 'session' 键。
+    发生异常时回滚，否则提交。
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        for arg in args:
+            if isinstance(arg, Session):
+                session = arg
+                break
+         # 2. 若未获取到，检查第一个位置参数是否为 Session 实例
+        if session is None and args :
+            session = args[0]
+        # 3. 若仍未获取到，抛出异常
+        if session is None:
+            logger.error("数据库未初始化，未获取到session对象")
+            raise ValueError("No SQLAlchemy Session found in arguments.")
+
+        try:
+            # 默认 autocommit=False，在第一次执行 SQL（如 add 或查询）时自动开始事务，无需手动 begin()。
+            # session.begin()  # 开始事务
+            logger.info(f"开始事务: {func.__name__}")
+            result = func(*args, **kwargs)
+            session.commit()
+            logger.info(f"提交事务: {func.__name__}")
+            return result
+        except Exception as e:
+            logger.error(f"数据库事务异常：{e}")
+            logger.error(f"回滚事务: {func.__name__}")
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+    return wrapper

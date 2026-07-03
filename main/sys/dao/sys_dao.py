@@ -3,6 +3,7 @@
 # @author: nj
 # @file: sys_dao
 # @project: fastapi_demo
+import datetime
 from typing import Optional
 
 from sqlalchemy import select, and_
@@ -10,19 +11,20 @@ from sqlalchemy.orm import Session
 
 from main.base.logger import logger
 from main.sys.models.models import SysUser, SysUserRole, SysRole
+from main.sys.models.sys_req import CreateUserReq
 from main.sys.models.sys_resp import SysUserResp, SysRoleResp, SysUserRoleResp
 
 
 class SysDao:
 
-    def get_user(self, db: Session, user_id: int) -> Optional[SysUserResp]:
-        result = db.execute(select(SysUser).where(SysUser.id == user_id, SysUser.user_status == 1))
+    def get_user(self, session: Session, user_id: int) -> Optional[SysUserResp]:
+        result = session.execute(select(SysUser).where(SysUser.id == user_id, SysUser.user_status == 1))
         user = result.scalar_one_or_none()
         if user is None:
             return None
         logger.info(f"获取到用户信息: {user} --userId:{user_id}")
         # 连表查询，获取用户角色
-        role_results = db.execute(select(SysRole)
+        role_results = session.execute(select(SysRole)
         .join(SysUserRole, SysRole.id == SysUserRole.role_id)
         .where(
             and_(
@@ -48,3 +50,30 @@ class SysDao:
         )
 
         return user_resp
+    
+    # 创建用户
+
+    def create_user(self, session: Session, user: CreateUserReq) -> int:
+        sys_user = SysUser(
+            username=user.username,
+            password=user.password,
+            user_status=user.userStatus,
+            user_start_time=user.userStartTime,
+            user_end_time=user.userEndTime,
+            create_code=user.createCode,
+            update_code=user.updateCode,
+            create_time=datetime.datetime.now(),
+            update_time=datetime.datetime.now(),
+        )
+        session.add(sys_user)
+        # 自己调用了 session.commit()，那么数据已被提前持久化，
+        # 外层的回滚无法撤销。确保所有数据修改操作只有最外层事务装饰器执行提交，内部 DAO 只做 add、delete、flush，
+        # session.commit()
+        session.flush()  # 将对象持久化到数据库，但不提交事务，确保 sys_user.id 可用
+        logger.info(f"创建用户成功: {sys_user}")
+        return sys_user.id
+    
+    # def get_user_permission(self, db: Session, user_id: int) -> Optional[SysUserRoleResp]:
+        
+
+

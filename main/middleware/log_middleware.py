@@ -51,5 +51,5 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             # 返回一个友好的错误响应
             return JSONResponse(
                 status_code=500,
-                content={"code": 500, "message": "服务器内部错误", "data": None}
+                content={"code": 500, "msg": "服务器内部错误", "data": None}
             )
