@@ -6,13 +6,14 @@
 import datetime
 from typing import Optional
 
-from sqlalchemy import select, and_
+from sqlalchemy import func, join, select, and_
 from sqlalchemy.orm import Session
 
 from main.base.logger import logger
-from main.sys.models.models import SysUser, SysUserRole, SysRole
+from main.base.page import Page
+from main.sys.models.models import SysPermission, SysRolePermission, SysUser, SysUserPermission, SysUserRole, SysRole
 from main.sys.models.sys_req import CreateUserReq
-from main.sys.models.sys_resp import SysUserResp, SysRoleResp, SysUserRoleResp
+from main.sys.models.sys_resp import SysPermissionResp, SysUserResp, SysRoleResp, SysUserRoleResp
 
 
 class SysDao:
@@ -73,7 +74,37 @@ class SysDao:
         logger.info(f"创建用户成功: {sys_user}")
         return sys_user.id
     
-    # def get_user_permission(self, db: Session, user_id: int) -> Optional[SysUserRoleResp]:
+    def get_permissions_page(self, session: Session, user_id: int,
+                            page_no: int=1, size: int=10) -> Page[SysPermissionResp]:
+        offset = (page_no - 1) * size
+        result = session.execute(select(SysPermission)
+        .join(SysRolePermission, SysPermission.id == SysRolePermission.permission_id)
+        .join(SysUserRole, SysRolePermission.role_id == SysUserRole.role_id and SysUserRole.user_id == user_id)
+        .where(
+            and_(
+                SysUserRole.user_id == user_id,
+                SysPermission.permission_status == 1,
+                SysUserRole.user_role_status == 1)).offset(offset).limit(size))
+        permissions = result.scalars().all()
+        if permissions is None or len(permissions) == 0:
+            return Page(items=permissions, total=0, page_no=page_no, size=size)
+        #  获取总数
+        total_result = select(func.count()).select_from(SysPermission).join(
+            SysRolePermission, SysPermission.id == SysRolePermission.permission_id).join(
+                SysUserRole, SysRolePermission.role_id == SysUserRole.role_id and SysUserRole.user_id == user_id
+                ).where(
+            and_(
+                SysUserRole.user_id == user_id,
+                SysPermission.permission_status == 1,
+                SysUserRole.user_role_status == 1))
+        total = session.execute(total_result).scalar_one()
+        # logger.info(f"获取权限列表成功: {permissions}")
+
+        permissions_items = [SysPermissionResp.model_validate(permission) for permission in permissions] if permissions else []
+        
+        page = Page(items=permissions_items, total=total, page_no=page_no, size=size)
+        return page
+        
         
 
 

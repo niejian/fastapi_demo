@@ -53,5 +53,12 @@ def create_user(user_name: str, user_password: str, db: Session = Depends(get_db
         return BaseResp.success(data={"id": user_id})
     return BaseResp.fail(-1, "创建用户失败")
 
+@router.get("/user/permissions/{user_id}/{page_no}/{size}", response_model=BaseResp)
+def get_permissions_page(user_id: int, page_no: int, size: int, db: Session = Depends(get_db)):
+    page = sys_service.get_permissions_page(db, user_id, page_no, size)
+    if page:
+        return BaseResp.success(data=page)
+    return BaseResp.fail(-1, "获取权限列表失败")
+
 
 

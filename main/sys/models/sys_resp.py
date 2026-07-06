@@ -32,3 +32,15 @@ class SysUserRoleResp(CamelCaseModel):
     role_id: int
     user_role_status: int
     # model_config = ConfigDict(from_attributes=True)
+
+class SysPermissionResp(CamelCaseModel):
+    id: int
+    permission_code: str
+    permission_name: str
+    permission_type: int
+    permission_status: int
+    permission_start_time: datetime.datetime
+    permission_end_time: datetime.datetime
+    permission_sort: int
+    permission_icon: str
+    permission_url: str

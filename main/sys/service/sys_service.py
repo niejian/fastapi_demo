@@ -4,8 +4,11 @@ from hashlib import md5
 import hashlib
 
 from main.base.base_dao import transactional
+from main.base.page import Page
 from main.sys.dao.sys_dao import SysDao
 from main.sys.models.sys_req import CreateUserReq
+from main.sys.models.sys_resp import SysPermissionResp
+from main.base.logger import logger
 
 class SysService:
     def __init__(self):
@@ -21,4 +24,8 @@ class SysService:
         user.userEndTime = datetime.datetime.now() + datetime.timedelta(days=3650)
         id = self.sys_dao.create_user(db, user)
         return id
+    
+    def get_permissions_page(self, db, user_id: int, page_no: int=1, size: int=10)-> Page[SysPermissionResp]:
+        logger.info(f"获取权限列表: user_id={user_id}, page_no={page_no}, size={size}")
+        return self.sys_dao.get_permissions_page(db, user_id, page_no, size)
     

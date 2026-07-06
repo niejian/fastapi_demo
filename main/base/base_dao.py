@@ -25,7 +25,13 @@ from main.base.logger import logger
 DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/rabac_demo"
 
 # engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-engine = create_engine(DATABASE_URL, echo=True, future=True)
+engine = create_engine(DATABASE_URL, echo=True, future=True, 
+                       pool_pre_ping=True, 
+                       pool_recycle=3600, # 连接池回收时间 1小时
+                       pool_size=10, # 连接池大小
+                       max_overflow=200, # 最大临时连接数
+                       pool_timeout=30, # 连接超时时间
+                       )
 # AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 Base = declarative_base()
