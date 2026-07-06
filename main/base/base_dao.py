@@ -4,20 +4,26 @@
 # @file: base_dao
 # @project: fastapi_demo
 import functools
+import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from main.base.logger import logger
 
-# class BaseDataSource:
-#     data_base_url: str
-#     engine = None
-#     session = None
-#
-#     def __init__(self, data_base_url: str):
-#         self.data_base_url = data_base_url
-#         self.engine = create_engine(self.data_base_url, echo=True, future=True)
-#         self.session = sessionmaker(self.engine, class_=Session, expire_on_commit=False)
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        logger.opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
+
+# 配置 SQLAlchemy
+sql_logger = logging.getLogger("sqlalchemy.engine")
+sql_logger.handlers = []
+sql_logger.addHandler(InterceptHandler())
+sql_logger.propagate = False
+sql_logger.setLevel(logging.INFO)   # 开发环境
 
 
 # -------------------- 数据库配置 --------------------
@@ -25,7 +31,7 @@ from main.base.logger import logger
 DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/rabac_demo"
 
 # engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-engine = create_engine(DATABASE_URL, echo=True, future=True, 
+engine = create_engine(DATABASE_URL, echo=False, future=True, 
                        pool_pre_ping=True, 
                        pool_recycle=3600, # 连接池回收时间 1小时
                        pool_size=10, # 连接池大小

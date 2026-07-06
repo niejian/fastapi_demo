@@ -33,3 +33,10 @@ session.add()方法要映射数据表，也就是通过sqlacodegen生成的model
 
 * 使用flush方法，报错'SysUser' object is not iterable
 session.flush(sys_user)  # ❌ 错误！flush() 不接受参数
+
+* http接口返回数据表对象处理
+```python
+# 处理数据表对象
+permissions_items = [SysPermissionResp.model_validate(permission) for permission in permissions] if permissions else []
+
+```
