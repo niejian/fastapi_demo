@@ -128,20 +128,34 @@ class SysDao:
             user_id=user_id,
             role_permission_list=[]
         )
-
+        role_permissions_dict = {}
+        # 先用字典存储相同role_id的权限列表
         for result in results:
             role_id = result[0]
             permission = result[1]
-            if role_id not in [role_permission.role_id for role_permission in user_role_permission.role_permission_list]:
-                user_role_permission.role_permission_list.append(SysRolePermissionResp(
-                    role_id=role_id,
-                    permission_list=[SysPermissionResp.model_validate(permission)]
-                ))
+            if role_id in role_permissions_dict:
+                role_permissions_dict[role_id].append(SysPermissionResp.model_validate(permission))
             else:
-                for role_permission in user_role_permission.role_permission_list:
-                    if role_permission.role_id == role_id:
-                        role_permission.permission_list.append(SysPermissionResp.model_validate(permission))
-                        break
+                role_permissions_dict[role_id] = [SysPermissionResp.model_validate(permission)]
+        # 将字典转换为 SysRolePermissionResp 对象并添加到 user_role_permission 中
+        for role_permission_dict in role_permissions_dict.items():
+            user_role_permission.role_permission_list.append(SysRolePermissionResp(
+                role_id=role_permission_dict[0],
+                permission_list=role_permission_dict[1]
+            ))
+        # user_role_permission.role_permission_list.append(role_permissions_dict)
+        
+        # for role_id, permissions in role_permissions_dict.items():
+        #     if role_id not in [role_permission.role_id for role_permission in user_role_permission.role_permission_list]:
+        #         user_role_permission.role_permission_list.append(SysRolePermissionResp(
+        #             role_id=role_id,
+        #             permission_list=[SysPermissionResp.model_validate(permission)]
+        #         ))
+        #     else:
+        #         for role_permission in user_role_permission.role_permission_list:
+        #             if role_permission.role_id == role_id:
+        #                 role_permission.permission_list.append(SysPermissionResp.model_validate(permission))
+        #                 break
 
             # 检查是否已经存在该角色
             # for role_permission in user_role_permission.role_permission_list:
