@@ -8,10 +8,9 @@ from sqlalchemy.orm import Session
 
 from main.base.base_dao import get_db
 from main.base.base_resp import BaseResp
-from main.sys.dao.sys_dao import SysDao
 from main.sys.models.sys_req import CreateUserReq
-from main.sys.models.sys_resp import SysUserResp
 from main.sys.service.sys_service import SysService
+from main.base.logger import logger
 
 router = APIRouter(
     prefix="/sys",
@@ -59,6 +58,15 @@ def get_permissions_page(user_id: int, page_no: int, size: int, db: Session = De
     if page:
         return BaseResp.success(data=page)
     return BaseResp.fail(-1, "获取权限列表失败")
+
+@router.get("/user/role_permissions/{user_id}", response_model=BaseResp)
+def get_user_role_permissions(user_id: int, db: Session = Depends(get_db)):
+    try:
+        result = sys_service.get_user_role_permissions(db, user_id)
+        return BaseResp.success(data=result)
+    except Exception as e:
+        logger.error(f"获取用户角色权限列表异常：{e}")
+        return BaseResp.fail(-1, "获取用户角色权限列表失败")
 
 
 

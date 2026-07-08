@@ -7,7 +7,7 @@ from main.base.base_dao import transactional
 from main.base.page import Page
 from main.sys.dao.sys_dao import SysDao
 from main.sys.models.sys_req import CreateUserReq
-from main.sys.models.sys_resp import SysPermissionResp
+from main.sys.models.sys_resp import SysPermissionResp, SysUserRolePermissionsResp
 from main.base.logger import logger
 
 class SysService:
@@ -28,4 +28,8 @@ class SysService:
     def get_permissions_page(self, db, user_id: int, page_no: int=1, size: int=10)-> Page[SysPermissionResp]:
         logger.info(f"获取权限列表: user_id={user_id}, page_no={page_no}, size={size}")
         return self.sys_dao.get_permissions_page(db, user_id, page_no, size)
+    
+    def get_user_role_permissions(self, db, user_id: int)-> SysUserRolePermissionsResp:
+        logger.info(f"获取用户角色权限列表: user_id={user_id}")
+        return self.sys_dao.get_user_role_permissions(db, user_id)
     

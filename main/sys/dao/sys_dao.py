@@ -4,16 +4,16 @@
 # @file: sys_dao
 # @project: fastapi_demo
 import datetime
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import func, join, select, and_
 from sqlalchemy.orm import Session
 
 from main.base.logger import logger
 from main.base.page import Page
-from main.sys.models.models import SysPermission, SysRolePermission, SysUser, SysUserPermission, SysUserRole, SysRole
+from main.sys.models.models import SysPermission, SysRolePermission, SysUser, SysUserRole, SysRole
 from main.sys.models.sys_req import CreateUserReq
-from main.sys.models.sys_resp import SysPermissionResp, SysUserResp, SysRoleResp, SysUserRoleResp
+from main.sys.models.sys_resp import SysPermissionResp, SysRolePermissionResp, SysUserResp, SysUserRolePermissionsResp
 
 
 class SysDao:
@@ -41,14 +41,16 @@ class SysDao:
         # 3. 将每个角色 ORM 转换为 Pydantic Schema
         # roles_resp = [SysRoleResp.model_validate(role) for role in roles] if roles else []
 
-        # 给返回对象的每个字段赋值
-        user_resp = SysUserResp(
-            id=user.id,
-            user_status=user.user_status,
-            username=user.username,
-            create_time=user.create_time,
-            roles=roles
-        )
+        # 第一种方法：给返回对象的每个字段赋值
+        # user_resp = SysUserResp(
+        #     id=user.id,
+        #     user_status=user.user_status,
+        #     username=user.username,
+        #     create_time=user.create_time,
+        #     roles=roles
+        # )
+        # 第2种方法：将 user_resp 转换为 Pydantic Schema
+        user_resp = SysUserResp.model_validate(user)
 
         return user_resp
     
@@ -104,6 +106,67 @@ class SysDao:
         
         page = Page(items=permissions_items, total=total, page_no=page_no, size=size)
         return page
+    
+    def get_user_role_permissions(self, session: Session, user_id: int) -> SysUserRolePermissionsResp:
+        role_results = session.execute(select(SysRole.id, SysPermission)
+                                       .join(SysRolePermission, SysPermission.id == SysRolePermission.permission_id)
+                                       .join(SysUserRole, SysRolePermission.role_id == SysUserRole.role_id)
+                                       .join(SysUser, SysUserRole.user_id == SysUser.id)
+                                       .where(
+                                           and_(
+                                               SysUser.id == user_id,
+                                               SysRole.role_status == 1,
+                                               SysUserRole.user_role_status == 1,
+                                               SysPermission.permission_status == 1
+                                           )
+                                       )
+                                )
+        results = role_results.all()
+        if results is None or len(results) == 0:
+            return []
+        user_role_permission = SysUserRolePermissionsResp(
+            user_id=user_id,
+            role_permission_list=[]
+        )
+
+        for result in results:
+            role_id = result[0]
+            permission = result[1]
+            if role_id not in [role_permission.role_id for role_permission in user_role_permission.role_permission_list]:
+                user_role_permission.role_permission_list.append(SysRolePermissionResp(
+                    role_id=role_id,
+                    permission_list=[SysPermissionResp.model_validate(permission)]
+                ))
+            else:
+                for role_permission in user_role_permission.role_permission_list:
+                    if role_permission.role_id == role_id:
+                        role_permission.permission_list.append(SysPermissionResp.model_validate(permission))
+                        break
+
+            # 检查是否已经存在该角色
+            # for role_permission in user_role_permission.role_permission_list:
+            #     if role_permission.role_id == role_id:
+            #         role_permission.permission_list.append(SysPermissionResp.model_validate(permission))
+            #         break
+            #     else:
+            #         role_permission.role_permission_list.append(SysRolePermissionResp(
+            #             role_id=role_id,
+            #             permission_list=[SysPermissionResp.model_validate(permission)]
+            #         ))
+
+        # user_role_permission = SysUserRolePermissionsResp(
+        #     user_id=user_id,
+        #     role_permission_list=[SysRolePermissionResp(
+        #         role_id=role[0],
+        #         permission_list=[SysPermissionResp.model_validate(role[1])] # 可以有部分字段缺失
+        #     ) for role in role_permissions]
+        # )
+        # 
+        logger.info(f"获取用户角色权限成功: {user_role_permission}")
+        return user_role_permission
+
+
+        
         
         
 

@@ -40,3 +40,22 @@ session.flush(sys_user)  # ❌ 错误！flush() 不接受参数
 permissions_items = [SysPermissionResp.model_validate(permission) for permission in permissions] if permissions else []
 
 ```
+* http接口返回对象处理
+ **返回对象字段可选，可以赋值默认值。设置的字段必须赋值**
+    * 给对象的每个字段赋值
+    ```python
+    # 第一种方法：给返回对象的每个字段赋值
+            user_resp = SysUserResp(
+                id=user.id,
+                user_status=user.user_status,
+                username=user.username,
+                create_time=user.create_time,
+                roles=roles
+            )
+    ```
+    * 通过`model_validate()`转换为对象
+    ```python
+        # 第2种方法：将 user_resp 转换为 Pydantic Schema
+        user_resp = SysUserResp.model_validate(user)
+
+    ```
