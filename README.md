@@ -73,3 +73,25 @@ $env:APP_ENV="dev"; fastapi dev run.py
 ```shell
 pip install -r requirements.txt
 ```
+* `uvicorn run:app ` 命令
+1. `uvicorn（命令本身）`
+这是 Uvicorn ASGI 服务器的入口命令。它负责启动一个高性能的异步服务器进程，监听网络请求，并将请求转交给你的 Python 代码处理。
+
+2. `run（文件/模块名）`
+这部分指定了包含应用代码的 Python 文件。它代表当前目录下的 run.py 文件。
+
+关键规则：不要写 .py 后缀。Uvicorn 采用 Python 的模块导入语法，所以写 run 而不是 run.py。
+
+路径规则拓展：
+
+如果文件在子文件夹中，用点号分隔，例如 src.main:app 代表 src/main.py 文件。
+
+本质上是让 Uvicorn 去执行 from run import app。
+
+3. `:`（分隔符）
+这是一个固定的分隔符，用来隔开`文件模块`和`变量名`。它的作用就是告诉 Uvicorn：“前面的部分是文件路径，后面的部分是文件中具体的变量名”。
+
+4. app（应用实例变量名）
+这部分指定了在 `run.py` 文件中，`FastAPI` 应用实例的具体变量名称。
+<b>在 run.py 文件中，你必须有一个名为 app 的变量，它是 FastAPI() 类的实例。</b>
+Uvicorn 会执行类似于 from run import app 的操作，拿到这个实例后，开始处理请求。
