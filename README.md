@@ -59,3 +59,9 @@ permissions_items = [SysPermissionResp.model_validate(permission) for permission
         user_resp = SysUserResp.model_validate(user)
 
     ```
+* 按照不同的配置启动
+确保各个文件跟run.py在同一目录下
+```shell
+# powershell中
+$env:APP_ENV="dev"; fastapi dev run.py
+```

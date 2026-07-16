@@ -8,6 +8,7 @@ import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from main.base.base_config import base_config
 from main.base.logger import logger
 
 class InterceptHandler(logging.Handler):
@@ -28,7 +29,8 @@ sql_logger.setLevel(logging.INFO)   # 开发环境
 
 # -------------------- 数据库配置 --------------------
 # 请替换为你的 MySQL 连接信息
-DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/rabac_demo"
+# DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/rabac_demo"
+DATABASE_URL = base_config.get_db_url()  # 从配置文件中获取数据库连接信息
 
 # engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 engine = create_engine(DATABASE_URL, echo=False, future=True, 

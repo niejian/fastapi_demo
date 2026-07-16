@@ -9,6 +9,7 @@
 from fastapi import FastAPI
 import uvicorn
 
+from main.base.base_config import base_config
 from main.middleware.log_middleware import LoggingMiddleware
 from main.sys.routes import sys_routes
 
@@ -24,6 +25,14 @@ app.add_middleware(LoggingMiddleware)
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+@app.get("/config")
+async def show_config():
+    return {
+        "db_host": base_config.db_host,
+        "db_user": base_config.db_user,
+        "db_name": base_config.db_name,
+    }
 
 if __name__ == "__main__":
     uvicorn.run("run:app", host="0.0.0.0", port=8000, reload=True)
