@@ -65,3 +65,11 @@ permissions_items = [SysPermissionResp.model_validate(permission) for permission
 # powershell中
 $env:APP_ENV="dev"; fastapi dev run.py
 ```
+* 将项目需要的包整合到`requirements.txt`
+```shell
+ pip freeze > requirements.txt
+```
+* 从`requirements.txt`中安装包
+```shell
+pip install -r requirements.txt
+```
