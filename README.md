@@ -59,3 +59,17 @@ permissions_items = [SysPermissionResp.model_validate(permission) for permission
         user_resp = SysUserResp.model_validate(user)
 
     ```
+* 按照不同的配置启动
+确保各个文件跟run.py在同一目录下
+```shell
+# powershell中
+$env:APP_ENV="dev"; fastapi dev run.py
+```
+* 将项目需要的包整合到`requirements.txt`
+```shell
+ pip freeze > requirements.txt
+```
+* 从`requirements.txt`中安装包
+```shell
+pip install -r requirements.txt
+```
